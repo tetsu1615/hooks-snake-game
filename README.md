@@ -2,6 +2,10 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+
+## Author GitHub Repository
+
+[Link](https://github.com/version-1/hooks-snake-game)
 ## Available Scripts
 
 In the project directory, you can run:
