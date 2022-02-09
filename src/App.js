@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Navigation from './components/Navigation'
 import Field from './components/Field'
 import Button from './components/Button'
@@ -8,6 +8,8 @@ import { initFields } from './utils'
 const initialPosition = { x: 17, y: 17 }
 const initialValues = initFields(35, initialPosition)
 const defaultInterval = 100
+
+initialValues[9][9] = 'food'
 
 const GameStatus = Object.freeze({
   init: 'init',
@@ -23,11 +25,25 @@ const Direction = Object.freeze({
   down: 'down'
 })
 
+const DirectionKeyCodeMap = Object.freeze({
+  37: Direction.left,
+  38: Direction.up,
+  39: Direction.right,
+  40: Direction.down,
+})
+
 const OppositeDirection = Object.freeze({
   up: 'down',
   right: 'left',
   left: 'right',
   down: 'up'
+})
+
+const Delta = Object.freeze({
+  up: { x: 0, y: -1 },
+  right: { x:  1, y: 0 },
+  left: { x: -1, y: 0 },
+  down: { x: 0, y: 1 },
 })
 
 let timer = undefined
@@ -71,7 +87,7 @@ function App() {
     if (!position || status !== GameStatus.playing) {
       return
     }
-    const canContinue = goUp()
+    const canContinue = handleMoving()
     if (!canContinue) {
       setStatus(GameStatus.gameover)
     }
@@ -89,7 +105,7 @@ function App() {
     setFields(initFields(35, initialPosition))
   }
 
-  const onChangeDirection = (newDirection) => {
+  const onChangeDirection = useCallback((newDirection) => {
     if (status !== GameStatus.playing) {
       return direction
     }
@@ -97,17 +113,34 @@ function App() {
       return
     }
     setDirection(newDirection)
-  }
+  }, [direction,status])
 
-  const goUp = () => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const newDirection = DirectionKeyCodeMap[e.keyCode];
+      if(!newDirection) {
+        return;
+      }
+
+      onChangeDirection(newDirection);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return() => document.removeEventListener('keydown', handleKeyDown)
+  }, [onChangeDirection])
+
+  const handleMoving = () => {
     const { x, y } = position
-    const newPosition = { x, y: y -1 }
+    const delta = Delta[direction]
+    const newPosition = {
+      x: x + delta.x,
+      y: y + delta.y
+    }
     if (isCollision(fields.length, newPosition)) {
       unsubscribe()
       return false
     }
     fields[y][x] = ''
-    fields[newPosition.y][x] = 'snake'
+    fields[newPosition.y][newPosition.x] = 'snake'
     setPosition(newPosition)
     setFields(fields)
     return true
